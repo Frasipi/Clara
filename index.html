@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#120a26">
+<title>Dossier classé — Lukas est con</title>
+<style>
+:root{
+  --bg:#120a26; --acc:#ff5d8f; --acc2:#ffb347; --blob2:#6d5dfc;
+  --ink:#f6f1ff; --mute:#b7aad6; --glass:rgba(255,255,255,.07); --line:rgba(255,255,255,.15);
+  --good:#4ade80; --bad:#ff5d6c; --r:24px;
+}
+body.secret{ --bg:#08080f; --acc:#ffc94d; --acc2:#ff7a45; --blob2:#8a5cff; --mute:#c9bfa0; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--ink); transition:background .9s;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  overflow-x:hidden; line-height:1.45;
+}
+.bg{position:fixed;inset:0;overflow:hidden;z-index:0}
+.blob{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(90px);opacity:.28;transition:background-color .9s}
+.blob.a{background:var(--acc);top:-25vmax;left:-20vmax;animation:drift 18s ease-in-out infinite alternate}
+.blob.b{background:var(--blob2);bottom:-28vmax;right:-22vmax;animation:drift 22s ease-in-out infinite alternate-reverse}
+@keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.1)}}
+
+#app{position:relative;z-index:1;min-height:100dvh;display:flex;flex-direction:column;
+  max-width:560px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom))}
+
+/* HUD */
+.hud{display:flex;align-items:center;gap:12px;padding:6px 2px 14px;opacity:0;transition:opacity .5s;pointer-events:none}
+.hud.on{opacity:1;pointer-events:auto}
+.hud .tag{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);white-space:nowrap}
+.hud .tag b{color:var(--ink);font-variant-numeric:tabular-nums}
+.bar{flex:1;height:6px;border-radius:9px;background:var(--glass);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .8s cubic-bezier(.2,.8,.2,1)}
+
+#stage{flex:1;display:flex;align-items:center;justify-content:center}
+.card{
+  width:100%;background:var(--glass);border:1px solid var(--line);border-radius:var(--r);
+  padding:26px 22px 22px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  animation:cardIn .55s cubic-bezier(.2,.9,.25,1) both;
+}
+.card.out{animation:cardOut .28s ease-in both}
+@keyframes cardIn{from{opacity:0;transform:translateY(28px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes cardOut{to{opacity:0;transform:translateY(-18px) scale(.97)}}
+
+.kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc2);font-weight:700;margin-bottom:14px}
+h1{font-size:clamp(28px,8vw,40px);line-height:1.08;letter-spacing:-.02em;margin-bottom:12px}
+h2{font-size:clamp(24px,6.5vw,32px);line-height:1.12;letter-spacing:-.02em;margin-bottom:12px}
+p{font-size:18px;margin-bottom:12px}
+p.big{font-size:clamp(22px,6vw,28px);font-weight:700;letter-spacing:-.01em}
+p.mute{color:var(--mute);font-size:15px}
+.rise{opacity:0;animation:rise .6s cubic-bezier(.2,.9,.25,1) forwards;animation-delay:var(--d,0s)}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.emoji-big{font-size:54px;display:block;margin-bottom:10px;animation:wob 2.4s ease-in-out infinite}
+@keyframes wob{50%{transform:rotate(-6deg) scale(1.06)}}
+
+.foot{margin-top:20px;animation:rise .5s both}
+.btn{
+  width:100%;min-height:54px;border:0;border-radius:999px;cursor:pointer;
+  font-weight:700;font-size:17px;line-height:1;font-family:inherit;color:#1a0f2e;padding:16px 22px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  box-shadow:0 8px 26px -6px var(--acc);transition:transform .15s,box-shadow .15s,opacity .2s;
+}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.ghost{background:var(--glass);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.pulse{animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 8px 40px 0 var(--acc);transform:scale(1.015)}}
+.btn + .btn{margin-top:10px}
+
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px;margin:8px 0 4px}
+.msg{max-width:84%;padding:11px 15px;border-radius:20px;font-size:16.5px;animation:pop .35s cubic-bezier(.2,1.4,.4,1) both}
+.msg small{display:block;font-size:11px;opacity:.7;margin-bottom:2px;font-weight:700;letter-spacing:.04em}
+.msg.me{align-self:flex-end;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1a0f2e;border-bottom-right-radius:6px}
+.msg.her{align-self:flex-start;background:rgba(255,255,255,.12);border-bottom-left-radius:6px}
+.typing{display:inline-flex;gap:5px;padding:14px 16px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--mute);animation:bounce 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{40%{transform:translateY(-5px);opacity:.5}}
+@keyframes pop{from{opacity:0;transform:scale(.8) translateY(8px)}}
+
+/* options */
+.opts{display:grid;gap:10px;margin-top:14px}
+.opt{
+  text-align:left;padding:15px 16px;border-radius:16px;border:1px solid var(--line);background:var(--glass);
+  color:var(--ink);font-weight:600;font-size:16px;line-height:1.3;font-family:inherit;cursor:pointer;transition:transform .15s,background .2s,border-color .2s;
+}
+.opt:active{transform:scale(.98)}
+.opt.picked{border-color:var(--acc);background:rgba(255,255,255,.14)}
+.opt.dim{opacity:.35;pointer-events:none}
+.reply{margin-top:14px;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.1);border-left:4px solid var(--acc2);font-size:16.5px;animation:rise .5s both}
+
+/* stats */
+.stat{margin:14px 0}
+.stat .row{display:flex;justify-content:space-between;gap:12px;font-size:14.5px;margin-bottom:6px;align-items:flex-end}
+.stat .row span{color:var(--mute)}
+.stat .row b{font-size:16px;text-align:right}
+.meter{height:10px;background:var(--glass);border-radius:9px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 1.3s cubic-bezier(.2,.8,.2,1)}
+.meter i.red{background:linear-gradient(90deg,#ff9a3c,var(--bad))}
+.meter i.green{background:linear-gradient(90deg,#a3e635,var(--good))}
+.note{margin-top:16px;padding:12px 14px;border:1px dashed var(--line);border-radius:14px;font-size:14px;color:var(--mute);font-style:italic}
+
+/* lists / tabs */
+.list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.item{padding:11px 14px;border-radius:14px;background:var(--glass);border:1px solid var(--line);font-size:15.5px;animation:pop .35s cubic-bezier(.2,1.4,.4,1) both}
+.tab{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px 10px 14px;border-radius:12px 12px 4px 4px;background:rgba(255,255,255,.1);font-size:14.5px;animation:pop .3s both}
+.tab b{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.12);cursor:pointer;font-size:18px;line-height:1}
+.tab.gone{animation:cardOut .22s both}
+.counter{display:flex;justify-content:space-between;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.counter b{color:var(--acc2);font-variant-numeric:tabular-nums}
+
+/* flip cards */
+.flips{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.flip{perspective:900px;height:158px;cursor:pointer}
+.flip>div{position:relative;width:100%;height:100%;transition:transform .6s cubic-bezier(.2,.9,.25,1);transform-style:preserve-3d}
+.flip.on>div{transform:rotateY(180deg)}
+.flip .f,.flip .b{position:absolute;inset:0;border-radius:18px;padding:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.flip .f{background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid var(--line);font-size:13px;color:var(--mute);gap:8px}
+.flip .f span{font-size:38px}
+.flip .b{transform:rotateY(180deg);background:linear-gradient(145deg,var(--acc),var(--acc2));color:#1a0f2e;font-weight:700;font-size:13.5px;line-height:1.3}
+
+/* verdict / stamp */
+.big-n{font-size:78px;font-weight:900;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stamp{display:inline-block;border:5px solid var(--bad);color:var(--bad);font-weight:900;font-size:34px;letter-spacing:.06em;padding:6px 18px;border-radius:12px;
+  transform:rotate(-8deg);margin:14px 0;animation:stamp .5s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes stamp{from{opacity:0;transform:rotate(-8deg) scale(3)}to{opacity:1;transform:rotate(-8deg) scale(1)}}
+.shake{animation:shake .4s}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* scanner */
+.scan{display:grid;place-items:center;margin:18px 0 6px}
+.finger{position:relative;width:132px;height:132px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:56px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer;
+  background:conic-gradient(var(--acc) var(--p,0%),transparent 0);}
+.finger::before{content:"";position:absolute;inset:6px;border-radius:50%;background:#14101f}
+.finger span{position:relative}
+.finger.ok{box-shadow:0 0 50px var(--good)}
+
+/* cert */
+.cert{border:2px solid var(--acc);border-radius:18px;padding:22px 16px;text-align:center;background:rgba(255,255,255,.05);position:relative}
+.cert::after{content:"";position:absolute;inset:6px;border:1px solid var(--line);border-radius:12px;pointer-events:none}
+.cert h2{margin-bottom:6px}
+.cert .who{font-size:30px;font-weight:900;color:var(--acc2);margin:8px 0;letter-spacing:-.02em}
+
+/* V2 */
+.alert{border:2px solid var(--bad);background:rgba(255,93,108,.12);border-radius:16px;padding:14px;margin:6px 0 10px;animation:blink 1.2s infinite;text-align:left}
+@keyframes blink{50%{background:rgba(255,93,108,.26)}}
+.alert h3{color:var(--bad);font-size:17px;margin-bottom:6px}
+.draft{margin:12px 0;padding:14px;border-radius:14px;background:rgba(255,255,255,.1);font-size:18px}
+.err{color:var(--bad);text-decoration:underline wavy var(--bad);font-weight:700}
+.typo{color:var(--bad);text-decoration:underline wavy var(--bad);font-weight:800;cursor:pointer;padding:2px 3px;animation:blink 1s infinite;border-radius:6px}
+.typo.fixed{color:var(--good);text-decoration:none;animation:none;cursor:default}
+.modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.6);z-index:10;padding:20px;animation:rise .25s both}
+.modal .box{background:#241a3d;border:1px solid var(--line);border-radius:20px;padding:22px;max-width:420px;width:100%;animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+.modal h3{margin-bottom:8px}.modal p{font-size:16px}
+.term{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#0b0813;border:1px solid var(--line);border-radius:14px;padding:14px;color:#9dffb0;min-height:90px;white-space:pre-wrap;margin-top:12px}
+.term .r{color:var(--bad);font-weight:700}
+.chart svg{width:100%;height:auto;display:block}
+.chart .ax{stroke:var(--line);fill:var(--mute);font-size:10px}
+.chart polyline{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1000;stroke-dashoffset:1000;transition:stroke-dashoffset 2.6s ease-in-out}
+.chart.on polyline{stroke-dashoffset:0}
+.chart .dot{opacity:0;animation:rise .4s forwards;animation-delay:var(--d)}
+.chart .dot circle{fill:var(--acc2)}
+.chart .dot text{fill:#1a0f2e;font-size:10px;font-weight:800;text-anchor:middle}
+.route{position:relative;height:96px;margin:14px 6px 8px}
+.route .line{position:absolute;left:8px;right:8px;top:44px;border-top:3px dashed var(--line)}
+.route .pt{position:absolute;top:36px;width:18px;height:18px;border-radius:50%;background:var(--acc)}
+.route .pt.a{left:0}.route .pt.b{right:0;background:var(--acc2)}
+.route em{position:absolute;top:62px;font-size:13px;font-style:normal;color:var(--mute);font-weight:700}
+.route .la{left:-6px}.route .lb{right:-6px}
+.route .pkg{position:absolute;top:8px;left:0;font-size:32px;opacity:0}
+.dabman{display:inline-block;font-size:92px;line-height:1.1;margin:6px 0;transition:transform .3s}
+.dabman.go{animation:dab .8s ease-in-out infinite}
+@keyframes dab{0%,100%{transform:none}25%,65%{transform:rotate(-32deg) translateX(-8px) skewX(-8deg)}80%{transform:rotate(10deg) translateY(-6px)}}
+.tl{border-left:2px solid var(--line);margin:14px 0 4px 8px;padding-left:18px;display:flex;flex-direction:column;gap:12px}
+.tli{position:relative;font-size:15.5px;animation:rise .45s both}
+.tli::before{content:"";position:absolute;left:-25px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--acc2);box-shadow:0 0 0 4px rgba(255,179,71,.2)}
+.card.shake{animation:shake .4s}
+
+.toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#fff;color:#1a0f2e;padding:12px 18px;border-radius:999px;font-weight:700;z-index:9;animation:rise .3s both}
+.fx{position:fixed;pointer-events:none;z-index:8;font-size:28px;animation:fly 1.4s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes fly{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-delay:0s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<div class="bg"><div class="blob a"></div><div class="blob b"></div></div>
+<div id="app">
+  <div class="hud" id="hud"><div class="tag">Preuves <b id="proofs">0</b>/47</div><div class="bar"><i id="prog"></i></div></div>
+  <main id="stage"></main>
+</div>
+
+<script>
+/* ============================================================
+   RÉGLAGES — modifie ici
+   ============================================================ */
+const CONFIG = {
+  her: "Clara",          // le prénom utilisé partout ({her} dans les textes)
+  phone: "",             // ton numéro (ex. "+33612345678"). Vide = elle choisit à qui envoyer via le menu de partage
+  total: 47              // nombre de preuves affiché à la fin
+};
+
+/* ============================================================
+   LES SCÈNES — modifie / ajoute / réordonne librement.
+   Types : intro, text, chat, undo, typo, choice, study, stats, scope, tabs,
+           route, dab, timeline, loading, verdict, unlock, folder, flips,
+           ordi, final   (secret:true = thème « dossier secret » doré)
+   "proofs" = nombre de preuves ajoutées en arrivant sur la scène.
+   {her} est remplacé par le prénom. Ton texte, tes règles.
+   ============================================================ */
+const SCENES = [
+  { type:"intro",
+    kicker:"Affaire n°0047 · Ne pas ouvrir en public",
+    title:"🚨 DOSSIER CLASSÉ — LUKAS EST CON 🚨",
+    sub:"Une enquête dont personne n'a demandé l'existence.",
+    cta:"Commencer l'enquête" },
+
+  { type:"text", proofs:3, kicker:"Pièce n°1 · Chronologie",
+    emoji:"⏰",
+    lines:["<p class='big'>14h37.</p>","<p>Lukas a une idée.</p>","<p class='mute'>C'est généralement à ce moment-là que les problèmes commencent.</p>"],
+    cta:"Découvrir son idée" },
+
+  { type:"chat", proofs:4, kicker:"Pièce n°2 · Les faits",
+    lines:["<p class='big'>Il décide d'envoyer un message à {her}.</p>","<p>Encore.</p>","<p class='mute'>Parce qu'apparemment il n'a toujours pas compris.</p>"],
+    reveal:"Voir les conséquences",
+    messages:[
+      {who:"me",  text:"Coucou. Question importante : un cône de chantier peut-il être suspect ? 🚧"},
+      {who:"me",  text:"(Ça m'a fait penser à toi. Ne me demande pas pourquoi.)"},
+      {who:"me",  text:"Je précise que c'est urgent."},
+      {who:"her", text:"Putain le gros lourd m'envoie ENCORE un message 😭", wait:1500},
+      {who:"her", text:"Bon… j'avoue ça me fait rire.", wait:2300}
+    ] },
+
+  { type:"undo", proofs:3, kicker:"Pièce n°3 · Le regret",
+    title:"0,3 seconde après l'envoi.",
+    sub:"Lukas a déjà tout regretté. Aide-le à réparer ça.",
+    button:"↩️ Annuler l'envoi",
+    meterLabel:"Niveau de regret",
+    steps:[
+      "Erreur : la messagerie n'avait pas prévu le cas Lukas.",
+      "Tentative de suppression pour tout le monde… {her} a déjà vu. Elle a TOUJOURS déjà vu.",
+      "Lukas lance le protocole « je fais comme si de rien n'était ». Taux de réussite : 0 %.",
+      "Lukas relit son message 14 fois. Il est toujours aussi con. Il est toujours envoyé."
+    ] },
+
+  { type:"typo", proofs:3, kicker:"Pièce n°4 · Alerte système",
+    alert:"FAUTE D'ORTHOGRAPHE DÉTECTÉE",
+    line:"Intervention de {her} requise.",
+    timer:"Temps estimé avant correction :",
+    late:"⏱️ Trop tard : {her} a déjà corrigé dans sa tête.",
+    button:"✍️ Corriger Lukas",
+    sentences:[
+      "Je pense à toi quand je <span class='err'>voit</span> un cône de chantier louche.",
+      "Je <span class='err'>pense(s)</span> à toi quand je vois un cône de chantier louche.",
+      "Je pense à toi quand je vois un cône de chantier louche. ✔️",
+      "…"
+    ],
+    logs:[
+      "✅ « voit » → « vois ». Lukas remercie, puis hésite à écrire « mercis ».",
+      "⚠️ Faute VOLONTAIRE détectée : « pense(s) ». Temps de réaction de {her} : 0,4 s. Record battu.",
+      "🏆 Phrase enfin correcte. Lukas la relit 12 fois. Il trouve une nouvelle faute. Il n'y en a pas."
+    ] },
+
+  { type:"choice", proofs:3, kicker:"Pièce n°5 · L'analyse",
+    intro:["<p>{her} répond enfin. Deux mots :</p>","<p class='big'>« mdrr ok »</p>","<p class='mute'>Lukas va maintenant analyser ça pendant 45 minutes. Selon toi, il pense quoi ?</p>"],
+    options:[
+      {label:"« mdrr » = elle rit vraiment", reply:"Trop simple. Deux « r » : amusée ? Très amusée ? Amusée avec une réserve ? Il appelle un ami pour avis d'expert."},
+      {label:"« ok » = ton glacial", reply:"Il relit « ok » 31 fois. À la 12ᵉ, le mot a perdu tout sens. À la 20ᵉ, il doute de l'alphabet."},
+      {label:"Elle est juste occupée", reply:"Hypothèse rationnelle rejetée à l'unanimité par son cerveau. Motion adoptée sans débat."}
+    ],
+    after:"⏱️ Temps d'analyse total : <b>45 min</b>. Probabilité de suranalyser un « mdrr » : <b>98,7 %</b>." },
+
+  { type:"study", proofs:4, kicker:"Pièce n°6 · Étude scientifique",
+    title:"ÉTUDE N°472 — COMPORTEMENT DU LUKAS EN PRÉSENCE D'UN MESSAGE DE {HER}",
+    byline:"Auteur : Lukas · Relecteur : Lukas · Comité d'éthique : Lukas (absent)",
+    chartLabel:"Agitation du sujet (échelle : de « calme » à « il faut l'arrêter »)",
+    points:[
+      {x:0,  y:8,   label:"Notification reçue. Le sujet fait semblant d'être calme."},
+      {x:1,  y:40,  label:"Sourire involontaire. Aucune explication scientifique."},
+      {x:3,  y:58,  label:"Rédaction de la réponse (version 1)."},
+      {x:11, y:75,  label:"Suppression. Version 2. Ajout d'un emoji. Retrait de l'emoji."},
+      {x:24, y:88,  label:"Consultation d'un ami. Avis : « envoie juste »."},
+      {x:47, y:100, label:"Envoi de : « ahah »."}
+    ],
+    liveLabel:"Relectures du message depuis le début de l'étude",
+    liveStart:3,
+    conclusion:"Conclusion : 47 minutes de réflexion pour 4 lettres. Rentabilité : catastrophique. Intérêt scientifique : aucun. {her} a répondu en 3 secondes." },
+
+  { type:"stats", proofs:4, kicker:"Pièce n°7 · Profil du sujet",
+    title:"Profil du sujet : Lukas",
+    byline:"Étude menée par un étudiant en sciences de la vie. Sujet étudié : lui-même. Conflit d'intérêts : majeur.",
+    rows:[
+      {label:"Capacité à suranalyser un message", value:"97 %", pct:97},
+      {label:"Probabilité de faire un site entier alors qu'un simple « mdrr » aurait suffi", value:"104 %", pct:100, tone:"red"},
+      {label:"Temps moyen pour choisir entre deux formulations", value:"47 min", pct:94},
+      {label:"Niveau de lourdeur", value:"CRITIQUE", pct:100, tone:"red"},
+      {label:"Messages écrits sans faute du premier coup", value:"31 %", pct:31, tone:"red"},
+      {label:"Capacité à ne pas rire quand {her} fait un dab sans raison", value:"0 %", pct:0, tone:"red"},
+      {label:"Idées qui commencent par « et si… » (en direct)", value:"214", pct:60, live:{from:214, every:1100}},
+      {label:"⚠️ Résistance aux chocolats", value:"0,3 %", pct:1, tone:"green"}
+    ],
+    popup:{ at:4200, title:"📣 Lukas demande la parole", text:"« Objection ! J'ai des diplômes. Je précise que j'ai des diplômes. »", buttons:["Ignorer","Ignorer aussi"], toast:["Objection rejetée.","Lukas insiste. Objection toujours rejetée."] },
+    note:"Les chercheurs ont demandé à ne plus jamais avoir à regarder ces chiffres.",
+    cta:"Suite →" },
+
+  { type:"scope", proofs:3, kicker:"Pièce n°8 · Ses « idées »",
+    title:"Lukas veut faire une petite blague.",
+    sub:"Une seule. Légère. Rapide. Aide-le à l'améliorer (il ne peut pas s'arrêter).",
+    button:"✨ Améliorer la blague",
+    adds:[
+      "Ajout d'un déguisement.",
+      "Ajout d'une musique dramatique.",
+      "Ajout d'un PowerPoint de 14 slides.",
+      "Ajout d'un site web interactif complet. Pour une blague qui devait tenir dans « mdrr ».",
+      "Ajout d'une conférence de presse. Personne n'a été invité."
+    ],
+    end:"Blague initiale : 1 phrase. Version actuelle : une production hollywoodienne. Lukas : « Attends, j'ai encore une idée. »" },
+
+  { type:"tabs", proofs:3, kicker:"Pièce n°9 · Imagerie cérébrale",
+    title:"Le cerveau de Lukas, en direct.",
+    sub:"Ferme les onglets pour le soulager. Bonne chance.",
+    pool:[
+      "Pourquoi j'ai dit ça en 2019",
+      "« haha » ou « hahaha » ?",
+      "Comment fonctionnent les ponts",
+      "Message d'hier — analyse complète",
+      "Réponse parfaite (trouvée 6 h trop tard)",
+      "Et si les cônes de chantier savaient ?",
+      "Dab de {her} : technique ou instinct ?",
+      "Comment envoyer un chocolat sans le goûter avant",
+      "« je pense » prend-il un s ? (non)",
+      "Pourquoi j'ai mis un point à la fin"
+    ],
+    end:"Ctrl+Alt+Suppr n'a pas suffi. Le cerveau de Lukas tourne actuellement à 99 % de sa mémoire pour rien." },
+
+  { type:"route", proofs:3, kicker:"Pièce n°10 · Logistique",
+    title:"Envois de trucs random",
+    sub:"Grenoble → Strasbourg. Envoie un colis : Lukas a beaucoup de choses à dire sur les cônes de chantier.",
+    from:"Grenoble", to:"Strasbourg", button:"📦 Envoyer un truc random", sends:3,
+    items:[
+      {emoji:"🚧", cap:"Photo d'un cône de chantier à l'air louche. Motif : « ça m'a fait penser à toi »."},
+      {emoji:"🍫", cap:"Chocolat. Arrivé entier. Lukas est très fier de s'être retenu. (Il a pris un carré. Peut-être deux.)"},
+      {emoji:"☁️", cap:"Photo d'un nuage « qui ressemblait à un truc ». Personne ne sait quoi. Envoyée quand même."},
+      {emoji:"🥖", cap:"Baguette. Annulé : trop loin. (La boulangerie est à 400 m.)"}
+    ],
+    bars:[
+      {label:"Distance parcourue pour voir {her}", value:"██████████████", pct:100, tone:"green"},
+      {label:"Distance parcourue pour aller chercher une baguette", value:"█", pct:4, tone:"red"},
+      {label:"Temps pour décider d'envoyer le cône", value:"47 min", pct:94}
+    ] },
+
+  { type:"dab", proofs:3, kicker:"Pièce n°11 · Analyse comportementale",
+    title:"Le phénomène du dab",
+    sub:"Auteur du dab : {her}. Victime : Lukas, qui perd tous ses moyens.",
+    trigger:"Déclencheur identifié :<br><b>musique + {her} + aucune raison valable.</b>",
+    button:"🎵 Lancer la musique",
+    logs:["Raison valable détectée : 0.","Réaction du sujet : rire immédiat. Dignité : introuvable.","Dab-o-mètre dépassé. Lukas a oublié ce qu'il était en train de dire."] },
+
+  { type:"choice", proofs:2, kicker:"Pièce n°12 · Le procès",
+    intro:["<p class='big'>Lukas décide d'assurer lui-même sa défense.</p>","<p class='mute'>Mauvaise idée n°1 de la journée. Quel argument devrait-il utiliser ?</p>"],
+    options:[
+      {label:"« Je suis très drôle »", reply:"Objection retenue. Le juge a ri 0 fois. Le greffier a ri 1 fois, par politesse."},
+      {label:"« C'était pas voulu »", reply:"Ça ne change rien, Lukas. Ça n'a jamais rien changé. Assieds-toi."},
+      {label:"« Regardez les chocolats… »", reply:"Le tribunal reste silencieux. Quelque chose cloche. L'argument est… étonnamment recevable. Le juge fronce les sourcils."}
+    ],
+    after:"⚖️ Le juge suspend la séance : <b>« Il faut rendre un verdict avant que ça se complique. »</b>" },
+
+  { type:"timeline", proofs:3, kicker:"Pièce n°13 · Observation longue durée",
+    title:"Évolution du sujet",
+    sub:"Nombre d'années d'observation : <b>4</b>.",
+    button:"⏩ Avancer dans le temps",
+    items:[
+      "<b>Phase 1.</b> Le sujet envoie des messages normaux. Il n'en reste aucune trace.",
+      "<b>Phase 2.</b> Apparition des messages random. Cause : « ça m'a fait penser à toi ».",
+      "<b>Phase 3.</b> Découverte de la correction orthographique. Le sujet écrit désormais « je pense(s) » exprès.",
+      "<b>Phase 4.</b> Le sujet est exposé aux dabs. Il ne s'en remet jamais.",
+      "<b>Phase 5.</b> Les chocolats. Le sujet devient dangereux.",
+      "<b>Phase actuelle.</b> Le sujet fabrique un site entier pour une blague. Pronostic : stable, mais inquiétant."
+    ],
+    end:"Conclusion : les scientifiques auraient normalement abandonné au bout de 6 mois." },
+
+  { type:"loading", proofs:2, kicker:"Pièce n°14 · Calcul final",
+    title:"Analyse du niveau de connerie…",
+    msgs:["Chargement des 46 premières preuves…","Calcul de la lourdeur…","Comptage des cônes de chantier évoqués…","Consultation d'un dictionnaire (par Lukas, pour vérifier un « s »)…","Calibrage de l'échelle…"],
+    stuck:"Résultat supérieur au maximum de l'échelle.",
+    term:["> LukasOverthinkError: stack overflow","> at message.relire() ×47","> at site.ajouterUneIdee() — appelée 12 fois","> at dab.surprise() — le sujet rit, exception non gérée","<span class='r'>> cause probable : Lukas</span>"],
+    banner:"🐛 Le bug a été attribué à : Lukas." },
+
+  { type:"verdict", proofs:4, kicker:"Pièce n°15 · Le verdict",
+    refuse:"Je refuse de croire ça",
+    refuseToasts:["Refus enregistré. Il ne sert à rien.","Refus rejeté. Preuve n°48 ajoutée : tu as refusé."] },
+
+  { type:"unlock", secret:true, kicker:"🔒 Accès restreint",
+    title:"DOSSIER SECRET",
+    sub:"Niveau de confidentialité : absurde. Pose ton doigt sur le scanner et maintiens pour t'identifier.",
+    ok:"Empreinte reconnue. Profil : « personne qui supporte Lukas ». Accès accordé.",
+    fail:"Scan interrompu. Tu as les mains trop timides. Recommence." },
+
+  { type:"folder", secret:true, kicker:"Dossier secret · Niveau 2",
+    label:"NE PAS OUVRIR",
+    button:"Ne surtout pas ouvrir",
+    opened:"Tu l'as ouvert. Évidemment.",
+    items:[
+      "<b>Pièce à conviction n°04 : Chocolat.</b><br>Le sujet affirme qu'il s'agit d'un cadeau. Les enquêteurs estiment : 60 % de cadeau, 30 % de « j'espère qu'on m'en laissera un », 10 % de « je l'ai déjà un peu goûté pour vérifier la qualité ».",
+      "<b>Pièce n°05 : Un chocolat sans occasion.</b><br>Le sujet n'attend pas de raison pour en offrir. Aucune méthode scientifique ne permet d'expliquer ça. Les chercheurs ont décidé de ne pas insister.",
+      "<b>Pièce n°06 : Un message supprimé.</b><br>Contenu : « je pense(s) à toi ». Statut : le « s » est toujours là. Il ne partira jamais."
+    ] },
+
+  { type:"flips", secret:true, kicker:"Contenu déclassifié",
+    title:"Ce que le dossier cachait.",
+    sub:"Touche chaque pièce pour la révéler.",
+    cards:[
+      {emoji:"🍫", front:"Pièce secrète n°1", back:"Choisit les chocolats comme un sommelier. Un sommelier très stressé, mais un sommelier."},
+      {emoji:"🧠", front:"Pièce secrète n°2", back:"Retient des détails beaucoup trop précis. Personne ne sait pourquoi. Lui non plus."},
+      {emoji:"🎭", front:"Pièce secrète n°3", back:"Fait des trucs débiles pour faire rire quelqu'un. Un site entier, par exemple."},
+      {emoji:"🕺", front:"Pièce secrète n°4", back:"Se fait surprendre par des dabs sans raison, et rit à chaque fois. Zéro dignité, zéro regret."}
+    ],
+    cta:"Conclure l'enquête" },
+
+  { type:"ordi", secret:true, kicker:"Analyse finale",
+    title:"L'ordinateur a tout lu.",
+    msgs:["Compilation de 4 ans de données…","Croisement avec 47 preuves…","Rédaction de la conclusion…"],
+    conclusionHead:"CONCLUSION DE L'ORDINATEUR :",
+    before:"« Lukas est effectivement con. Cependant, l'ordinateur signale que Lukas reste un ",
+    wrong:"suject", right:"sujet",
+    after:" à surveiller. Une faute s'est glissée dans cette conclusion. L'ordinateur ne sait pas la corriger. Intervention humaine requise. »",
+    hint:"👆 Touche la faute pour intervenir.",
+    thanks:["Merci. Lukas n'aurait rien vu. (Il aurait relu 47 fois.)","Dossier clos. Lukas retourne analyser ta réponse pendant 45 minutes.","<b>Il a déjà commencé.</b>"],
+    cta:"Dernière étape" },
+
+  { type:"final", secret:true, kicker:"Dernière étape · Le tribunal te laisse trancher",
+    title:"Alors, ton verdict ?",
+    options:["Gros con","Très con","Con, mais avec de bons chocolats"],
+    certTitle:"Certificat officiel",
+    certLine:"Lukas est officiellement reconnu :",
+    certFoot:"Aucun cône de chantier n'a été blessé dans la réalisation de ce dossier. Lukas, lui, attend ta réponse.",
+    share:"Envoyer mon verdict à Lukas 📩",
+    shareText:v=>`Verdict du tribunal : Lukas est officiellement « ${v} ». Appel rejeté. 😂`,
+    replay:"Rejouer l'enquête ↺" }
+];
+
+/* ============================================================
+   MOTEUR — pas besoin d'y toucher
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const stage = $("#stage"), hud = $("#hud");
+const T = s => String(s).replaceAll("{her}", CONFIG.her).replaceAll("{HER}", CONFIG.her.toUpperCase());
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const mk = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = T(html); return e; };
+const pick = a => a[Math.floor(Math.random() * a.length)];
+let idx = -1, proofs = 0, run = 0, finalVerdict = "";
+
+function rises(parent, htmls, start = 0, gap = .45) {
+  htmls.forEach((h, i) => { const w = mk("div", "rise", h); w.style.setProperty("--d", (start + i * gap) + "s"); parent.append(w); });
+  return start + htmls.length * gap;
+}
+function toast(t) { const e = mk("div", "toast", t); document.body.append(e); setTimeout(() => e.remove(), 2200); }
+function burst(el, emojis = ["🎉","🍫","😂","✨"], n = 14) {
+  const r = (el || document.body).getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const f = mk("div", "fx", pick(emojis));
+    f.style.left = (r.left + r.width / 2) + "px"; f.style.top = (r.top + r.height / 2) + "px";
+    f.style.setProperty("--x", (Math.random() * 300 - 150) + "px");
+    f.style.setProperty("--y", (Math.random() * -260 - 40) + "px");
+    f.style.setProperty("--r", (Math.random() * 360 - 180) + "deg");
+    document.body.append(f); setTimeout(() => f.remove(), 1500);
+  }
+}
+function setProofs(n) {
+  const el = $("#proofs"), from = +el.textContent, t0 = performance.now();
+  (function tick(t) { const k = Math.min(1, (t - t0) / 700); el.textContent = Math.round(from + (n - from) * k); if (k < 1) requestAnimationFrame(tick); })(t0);
+  $("#prog").style.width = Math.min(100, idx / (SCENES.length - 1) * 100) + "%";
+}
+
+function statRow(r, delay, grow, c) {
+  const w = mk("div", "stat rise", `<div class="row"><span>${T(r.label)}</span><b>${r.value}</b></div><div class="meter"><i class="${r.tone || ""}"></i></div>`);
+  w.style.setProperty("--d", delay + "s");
+  setTimeout(() => { const f = w.querySelector("i"); f && (f.style.width = r.pct + "%"); }, grow);
+  if (r.live) { let n = r.live.from; const b = w.querySelector("b"); const iv = setInterval(() => c.alive() ? b.textContent = ++n : clearInterval(iv), r.live.every); }
+  return w;
+}
+function popup({ title, text, buttons = ["OK"], after }) {
+  const m = mk("div", "modal", `<div class="box"><h3>${title}</h3><p>${text}</p><div class="opts"></div></div>`), o = m.querySelector(".opts");
+  buttons.forEach((t, i) => { const b = mk("button", "opt", t); b.onclick = () => { m.remove(); after && after(i); }; o.append(b); });
+  document.body.append(m);
+}
+let eggFound = false;
+function egg() {
+  eggFound = true; burst($("#proofs"), ["🍫", "🔎"], 10);
+  toast("🔎 Preuve cachée n°48 : un chocolat. Lukas n'en a mangé que la moitié.");
+}
+(() => { let k = 0; $("#hud").addEventListener("click", () => { if (++k === 3 && !eggFound) egg(); }); })();
+
+function go(i) {
+  const old = stage.firstElementChild;
+  const show = () => {
+    idx = i; const s = SCENES[i]; const my = ++run;
+    document.body.classList.toggle("secret", !!s.secret);
+    document.querySelectorAll(".modal").forEach(m => m.remove());
+    hud.classList.toggle("on", i > 0);
+    proofs = s.type === "verdict" ? CONFIG.total : Math.min(CONFIG.total - 1, proofs + (s.proofs || 0));
+    if (s.type === "verdict") proofs = CONFIG.total - 0; setProofs(proofs);
+    const card = mk("section", "card"); stage.replaceChildren(card);
+    const ctx = {
+      card, alive: () => my === run, sleep: async ms => { await sleep(ms); return my === run; },
+      ready(label, cls = "") {
+        const f = mk("div", "foot"), b = mk("button", "btn pulse " + cls, label || "Suite →");
+        b.onclick = () => { b.disabled = true; b.classList.remove("pulse"); go(i + 1); };
+        f.append(b); card.append(f);
+      }
+    };
+    if (s.kicker && s.type !== "intro") card.append(mk("div", "kicker", s.kicker));
+    TYPES[s.type](s, ctx);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  if (old) { old.classList.add("out"); setTimeout(show, 260); } else show();
+}
+
+const TYPES = {
+  intro(s, c) {
+    c.card.append(mk("div", "kicker", s.kicker));
+    const em = mk("span", "emoji-big", "🕵️"); let k = 0;
+    em.onclick = () => { if (++k === 5) { burst(em, ["🕺", "😎", "🎵"], 14); toast("🕺 Un dab sans raison. Lukas ne s'en remet pas."); } };
+    c.card.append(em);
+    c.card.append(mk("h1", "", s.title), mk("p", "mute rise", s.sub));
+    c.ready(s.cta);
+  },
+
+  text(s, c) {
+    if (s.emoji) c.card.append(mk("span", "emoji-big", s.emoji));
+    const end = rises(c.card, s.lines);
+    setTimeout(() => c.alive() && c.ready(s.cta), end * 1000 + 300);
+  },
+
+  async chat(s, c) {
+    rises(c.card, s.lines);
+    const f = mk("div", "foot"), b = mk("button", "btn pulse", s.reveal);
+    f.append(b); c.card.append(f);
+    await new Promise(r => b.onclick = r); f.remove();
+    const chat = mk("div", "chat"); c.card.append(chat);
+    for (const m of s.messages) {
+      let dots;
+      if (m.who === "her") { dots = mk("div", "msg her typing", "<i></i><i></i><i></i>"); chat.append(dots); await c.sleep(m.wait || 1200); if (!c.alive()) return; dots.remove(); }
+      else await c.sleep(m.wait || 900);
+      if (!c.alive()) return;
+      chat.append(mk("div", "msg " + m.who, `<small>${m.who === "me" ? "Lukas" : CONFIG.her}</small>${m.text}`));
+    }
+    await c.sleep(900); c.alive() && c.ready();
+  },
+
+  undo(s, c) {
+    c.card.append(mk("h2", "rise", s.title), mk("p", "mute rise", s.sub));
+    const st = mk("div", "stat"); st.innerHTML = `<div class="row"><span>${s.meterLabel}</span><b id="rg">12 %</b></div><div class="meter"><i class="red" style="width:12%"></i></div>`;
+    const log = mk("div", "list"); c.card.append(st, log);
+    const f = mk("div", "foot"), b = mk("button", "btn", s.button); f.append(b); c.card.append(f);
+    let n = 0; const bar = st.querySelector("i"), val = st.querySelector("b");
+    b.onclick = () => {
+      log.append(mk("div", "item", s.steps[n])); n++;
+      const p = Math.min(100, 12 + n * Math.ceil(88 / s.steps.length)); bar.style.width = p + "%"; val.textContent = (n >= s.steps.length ? "100" : p) + " %";
+      b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+      if (n >= s.steps.length) { f.remove(); c.ready(); }
+    };
+  },
+
+  choice(s, c) {
+    rises(c.card, s.intro, 0, .35);
+    const box = mk("div", "opts"); c.card.append(box);
+    let done = false;
+    s.options.forEach(o => {
+      const b = mk("button", "opt rise", o.label); b.style.setProperty("--d", ".9s");
+      b.onclick = () => {
+        if (done) return; done = true;
+        box.querySelectorAll(".opt").forEach(x => x.classList.add(x === b ? "picked" : "dim"));
+        c.card.append(mk("div", "reply", o.reply));
+        setTimeout(() => { if (!c.alive()) return; c.card.append(mk("div", "reply", s.after)); setTimeout(() => c.alive() && c.ready(), 500); }, 1300);
+      };
+      box.append(b);
+    });
+  },
+
+  stats(s, c) {
+    c.card.append(mk("h2", "", s.title));
+    if (s.byline) c.card.append(mk("p", "mute rise", s.byline));
+    const gap = .22;
+    s.rows.forEach((r, i) => c.card.append(statRow(r, .2 + i * gap, 450 + i * 220, c)));
+    const n = mk("div", "note rise", s.note); n.style.setProperty("--d", (.4 + s.rows.length * gap) + "s"); c.card.append(n);
+    if (s.popup) setTimeout(() => {
+      if (!c.alive()) return; let k = 0;
+      const ask = () => popup({ title: s.popup.title, text: s.popup.text, buttons: s.popup.buttons, after: i => { toast(T(s.popup.toast[Math.min(i, s.popup.toast.length - 1)])); } });
+      ask();
+    }, s.popup.at);
+    setTimeout(() => c.alive() && c.ready(s.cta), (.6 + s.rows.length * gap) * 1000 + 1200);
+  },
+
+  typo(s, c) {
+    c.card.append(mk("div", "alert", `<h3>⚠️ ${s.alert}</h3><p style="font-size:15px;margin:0">${s.line}</p><p style="font-size:15px;margin:6px 0 0" class="tm">${s.timer} <b>0,7</b> s</p>`));
+    const draft = mk("div", "draft", s.sentences[0]), log = mk("div", "list");
+    c.card.append(draft, log);
+    const tm = c.card.querySelector(".tm");
+    let t = 7; const iv = setInterval(() => {
+      if (!c.alive()) return clearInterval(iv);
+      t--; tm.querySelector("b") && (tm.querySelector("b").textContent = (t / 10).toFixed(1).replace(".", ","));
+      if (t <= 0) { clearInterval(iv); tm.innerHTML = T(s.late); }
+    }, 110);
+    const f = mk("div", "foot"), b = mk("button", "btn", s.button); f.append(b); c.card.append(f);
+    let n = 0;
+    b.onclick = () => {
+      burst(draft, ["✍️", "🔴", "✂️", "📕"], 9);
+      draft.classList.remove("shake"); void draft.offsetWidth; draft.classList.add("shake");
+      draft.innerHTML = s.sentences[n + 1]; log.append(mk("div", "item", s.logs[n])); n++;
+      if (n >= s.logs.length) { f.remove(); setTimeout(() => c.alive() && c.ready(), 900); }
+    };
+  },
+
+  study(s, c) {
+    c.card.append(mk("h2", "", s.title)); c.card.querySelector("h2").style.fontSize = "21px";
+    c.card.append(mk("p", "mute rise", s.byline), mk("p", "mute", s.chartLabel));
+    const px = x => 22 + x / 48 * 286, py = y => 136 - y * 1.1;
+    const pts = s.points.map(p => [px(p.x), py(p.y)]);
+    const svg = mk("div", "chart", `<svg viewBox="0 0 320 150"><line x1="22" y1="136" x2="312" y2="136" class="ax"/><polyline points="${pts.map(p => p.join(",")).join(" ")}"/>${pts.map((p, i) => `<g class="dot" style="--d:${.4 + i * .38}s"><circle cx="${p[0]}" cy="${p[1]}" r="9"/><text x="${p[0]}" y="${p[1] + 4}">${i + 1}</text></g>`).join("")}<text x="22" y="148" class="ax">0 min</text><text x="312" y="148" class="ax" text-anchor="end">47 min</text></svg>`);
+    c.card.append(svg);
+    setTimeout(() => svg.classList.add("on"), 150);
+    const list = mk("div", "list"); c.card.append(list);
+    s.points.forEach((p, i) => { const it = mk("div", "item", `<b>${i + 1}</b> · ${p.x} min — ${p.label}`); it.style.animationDelay = (.6 + i * .38) + "s"; it.style.fontSize = "14px"; it.style.padding = "8px 12px"; list.append(it); });
+    const live = mk("div", "counter", `<span>${s.liveLabel}</span><b>${s.liveStart}</b>`), lb = live.querySelector("b");
+    c.card.append(live); let n = s.liveStart;
+    const iv = setInterval(() => c.alive() ? lb.textContent = ++n : clearInterval(iv), 900);
+    const endAt = (.8 + s.points.length * .38) * 1000;
+    setTimeout(() => { if (!c.alive()) return; c.card.append(mk("div", "reply", s.conclusion)); setTimeout(() => c.alive() && c.ready(), 900); }, endAt + 1200);
+  },
+
+  route(s, c) {
+    c.card.append(mk("h2", "", s.title), mk("p", "mute", s.sub));
+    const r = mk("div", "route", `<div class="line"></div><span class="pt a"></span><span class="pt b"></span><em class="la">${s.from}</em><em class="lb">${s.to}</em><div class="pkg"></div>`);
+    c.card.append(r); const pkg = r.querySelector(".pkg");
+    const log = mk("div", "list"); c.card.append(log);
+    const f = mk("div", "foot"), b = mk("button", "btn", s.button); f.append(b); c.card.append(f);
+    let n = 0;
+    b.onclick = async () => {
+      b.disabled = true; const it = s.items[n % s.items.length]; n++;
+      pkg.textContent = it.emoji; pkg.style.transition = "none"; pkg.style.left = "0%"; pkg.style.opacity = 1; void pkg.offsetWidth;
+      pkg.style.transition = "left 1.5s cubic-bezier(.5,0,.3,1)"; pkg.style.left = "calc(100% - 34px)";
+      if (!await c.sleep(1600)) return;
+      pkg.style.opacity = 0; burst(r.querySelector(".pt.b"), [it.emoji], 5);
+      log.append(mk("div", "item", `${it.emoji} ${it.cap}`));
+      if (n >= s.sends) {
+        f.remove();
+        let anchor = log;
+        s.bars.forEach((x, i) => { const el = statRow(x, 0, 200 + i * 300, c); anchor.after(el); anchor = el; });
+        setTimeout(() => c.alive() && c.ready(), 1400);
+      } else { b.disabled = false; b.textContent = n === 1 ? "📦 Encore un (il en a plein)" : "📦 Un dernier. Promis."; }
+    };
+  },
+
+  dab(s, c) {
+    c.card.append(mk("h2", "", s.title), mk("p", "mute", s.sub), mk("div", "alert", s.trigger));
+    c.card.style.textAlign = "center";
+    const man = mk("div", "dabman", "🕺"), val = mk("div", "big-n", "0 %"); val.style.fontSize = "44px";
+    const log = mk("div", "list"); log.style.textAlign = "left";
+    c.card.append(man, val, log);
+    const f = mk("div", "foot"), b = mk("button", "btn", s.button); f.append(b); c.card.append(f);
+    b.onclick = async () => {
+      f.remove(); man.classList.add("go"); burst(man, ["🎵", "🕺", "😎"], 10);
+      const t0 = performance.now();
+      await new Promise(r => { const iv = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / 2600); val.textContent = Math.round(347 * k * k) + " %"; if (k >= 1 || !c.alive()) { clearInterval(iv); r(); } }, 40); });
+      for (const l of s.logs) { if (!await c.sleep(900)) return; log.append(mk("div", "item", l)); }
+      man.classList.remove("go"); setTimeout(() => c.alive() && c.ready(), 900);
+    };
+  },
+
+  timeline(s, c) {
+    c.card.append(mk("h2", "", s.title), mk("p", "mute", s.sub));
+    const tl = mk("div", "tl"); c.card.append(tl);
+    const f = mk("div", "foot"), b = mk("button", "btn", s.button); f.append(b); c.card.append(f);
+    let n = 0;
+    b.onclick = () => {
+      tl.append(mk("div", "tli", s.items[n])); n++;
+      if (n >= s.items.length) { f.remove(); c.card.append(mk("div", "reply", s.end)); setTimeout(() => c.alive() && c.ready(), 1200); }
+    };
+  },
+
+  async loading(s, c) {
+    c.card.append(mk("h2", "", s.title));
+    const st = mk("div", "stat", `<div class="row"><span class="m">${s.msgs[0]}</span><b>0 %</b></div><div class="meter"><i style="transition:width .5s"></i></div>`);
+    c.card.append(st);
+    const m = st.querySelector(".m"), v = st.querySelector("b"), bar = st.querySelector("i");
+    for (let i = 0; i < s.msgs.length; i++) {
+      m.textContent = T(s.msgs[i]); const p = Math.round((i + 1) / s.msgs.length * 99);
+      bar.style.width = p + "%"; v.textContent = p + " %";
+      if (!await c.sleep(i === s.msgs.length - 1 ? 2200 : 1100)) return;
+    }
+    m.textContent = T(s.stuck); bar.className = "red"; c.card.classList.add("shake"); navigator.vibrate && navigator.vibrate(120);
+    const term = mk("div", "term"); c.card.append(term);
+    for (const l of s.term) { term.innerHTML += T(l) + "\n"; if (!await c.sleep(650)) return; }
+    c.card.append(mk("div", "reply", s.banner));
+    setTimeout(() => c.alive() && c.ready(), 1100);
+  },
+
+  folder(s, c) {
+    const em = mk("span", "emoji-big", "📁"); em.style.fontSize = "76px"; em.style.textAlign = "center"; em.style.width = "100%";
+    const tag = mk("div", "stamp", s.label); tag.style.animation = "stamp .5s both"; tag.style.fontSize = "26px";
+    const wrap = mk("div", ""); wrap.style.textAlign = "center"; wrap.append(em, tag); c.card.append(wrap);
+    const f = mk("div", "foot"), b = mk("button", "btn", s.button); f.append(b); c.card.append(f);
+    b.onclick = async () => {
+      f.remove(); em.textContent = "📂"; tag.remove(); toast(s.opened);
+      const h = mk("h2", "", s.opened); wrap.append(h); h.style.marginTop = "6px";
+      const list = mk("div", "list"); c.card.append(list);
+      for (const t of s.items) { if (!await c.sleep(1100)) return; list.append(mk("div", "item", t)); window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }); }
+      if (await c.sleep(900)) c.ready();
+    };
+  },
+
+  async ordi(s, c) {
+    c.card.append(mk("h2", "", s.title));
+    const st = mk("div", "stat", `<div class="row"><span class="m">${s.msgs[0]}</span><b>0 %</b></div><div class="meter"><i style="transition:width .9s"></i></div>`);
+    c.card.append(st);
+    const m = st.querySelector(".m"), v = st.querySelector("b"), bar = st.querySelector("i");
+    for (let i = 0; i < s.msgs.length; i++) {
+      m.textContent = T(s.msgs[i]); const p = Math.round((i + 1) / s.msgs.length * 100);
+      bar.style.width = p + "%"; v.textContent = p + " %";
+      if (!await c.sleep(1300)) return;
+    }
+    st.remove();
+    const box = mk("div", "term"); box.style.color = "var(--ink)"; box.style.fontSize = "15.5px"; box.style.lineHeight = "1.5";
+    box.innerHTML = `<b style="color:var(--acc2)">${s.conclusionHead}</b>\n\n${T(s.before)}<span class="typo" id="tp">${s.wrong}</span>${T(s.after)}`;
+    c.card.append(box);
+    const hint = mk("p", "mute rise", s.hint); hint.style.marginTop = "12px"; c.card.append(hint);
+    box.querySelector("#tp").onclick = async e => {
+      const t = e.currentTarget; t.onclick = null; t.textContent = s.right; t.className = "typo fixed";
+      hint.remove(); burst(t, ["✍️", "✅", "📕"], 10); box.classList.add("shake");
+      for (const l of s.thanks) { if (!await c.sleep(1400)) return; c.card.append(mk("p", "rise", l)); }
+      if (await c.sleep(1200)) c.ready(s.cta);
+    };
+  },
+
+  scope(s, c) {
+    c.card.append(mk("h2", "", s.title), mk("p", "mute", s.sub));
+    const log = mk("div", "list"); c.card.append(log);
+    const f = mk("div", "foot"), b = mk("button", "btn", s.button); f.append(b); c.card.append(f);
+    let n = 0;
+    b.onclick = () => {
+      log.append(mk("div", "item", "✅ " + s.adds[n])); n++;
+      if (n >= s.adds.length) { f.remove(); log.append(mk("div", "reply", s.end)); setTimeout(() => c.alive() && c.ready(), 900); }
+      else b.textContent = n >= 3 ? "🙏 Non Lukas, arrête" : s.button;
+    };
+  },
+
+  tabs(s, c) {
+    c.card.append(mk("h2", "", s.title), mk("p", "mute", s.sub));
+    const cnt = mk("div", "counter", "<span>Onglets ouverts</span><b>47</b>"), num = cnt.querySelector("b");
+    const list = mk("div", "list"); c.card.append(cnt, list);
+    let open = 47, closed = 0, bag = [...s.pool].sort(() => Math.random() - .5);
+    const add = () => {
+      if (!bag.length) bag = [...s.pool].sort(() => Math.random() - .5);
+      const t = mk("div", "tab", `<span>${T(bag.pop())}</span><b>×</b>`);
+      t.querySelector("b").onclick = () => {
+        if (t.classList.contains("gone")) return; t.classList.add("gone"); closed++;
+        setTimeout(() => t.remove(), 220);
+        if (closed < 5) { open += 1; add(); add(); } else open -= 1;
+        num.textContent = open;
+        if (closed === 5) { list.after(mk("div", "reply", s.end)); setTimeout(() => c.alive() && c.ready(), 900); }
+      };
+      list.append(t);
+    };
+    for (let i = 0; i < 5; i++) add();
+  },
+
+  async verdict(s, c) {
+    c.card.style.textAlign = "center";
+    c.card.append(mk("p", "mute", "Après analyse de"));
+    const n = mk("div", "big-n", "0"); c.card.append(n);
+    c.card.append(mk("p", "mute", "preuves accablantes…"));
+    const t0 = performance.now();
+    await new Promise(r => { const iv = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / 1600); n.textContent = Math.round(CONFIG.total * k); if (k >= 1 || !c.alive()) { clearInterval(iv); r(); } }, 40); });
+    if (!await c.sleep(500)) return;
+    c.card.append(mk("div", "stamp", "COUPABLE")); burst(n, ["😂", "🚨", "🤡"]);
+    if (!await c.sleep(900)) return;
+    c.card.append(mk("p", "big rise", "Verdict : Lukas est effectivement un gros con."));
+    if (!await c.sleep(2200)) return;
+    c.card.append(mk("p", "rise", "Mais bizarrement… il est plutôt sympa."));
+    if (!await c.sleep(1800)) return;
+    const f = mk("div", "foot"), b = mk("button", "btn pulse", "📁 Voir le dossier secret →"); f.append(b); c.card.append(f);
+    b.onclick = () => go(idx + 1);
+    if (s.refuse) {
+      const r = mk("button", "btn ghost", s.refuse); let k = 0; f.append(r);
+      r.onclick = () => { toast(s.refuseToasts[Math.min(k++, s.refuseToasts.length - 1)]); c.card.classList.remove("shake"); void c.card.offsetWidth; c.card.classList.add("shake"); };
+    }
+  },
+
+  async unlock(s, c) {
+    c.card.append(mk("h2", "", s.title), mk("p", "mute", s.sub));
+    const wrap = mk("div", "scan"), fp = mk("div", "finger", "<span>🫆</span>"); wrap.append(fp);
+    const msg = mk("p", "mute"); msg.style.textAlign = "center"; c.card.append(wrap, msg);
+    let t0 = 0, raf = 0, done = false;
+    const step = t => { const k = Math.min(1, (t - t0) / 1500); fp.style.setProperty("--p", (k * 100) + "%");
+      if (k >= 1) { done = true; fp.classList.add("ok"); msg.innerHTML = s.ok; navigator.vibrate && navigator.vibrate(60); burst(fp, ["🔓", "✨"], 10); setTimeout(() => c.alive() && c.ready("Ouvrir le dossier →"), 900); }
+      else raf = requestAnimationFrame(step); };
+    const start = e => { e.preventDefault(); if (done) return; msg.textContent = "Analyse en cours…"; t0 = performance.now(); raf = requestAnimationFrame(step); };
+    const stop = () => { if (done || !t0) return; cancelAnimationFrame(raf); t0 = 0; fp.style.setProperty("--p", "0%"); msg.textContent = s.fail; };
+    fp.addEventListener("pointerdown", start);
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => fp.addEventListener(ev, stop));
+    fp.addEventListener("contextmenu", e => e.preventDefault());
+  },
+
+  flips(s, c) {
+    c.card.append(mk("h2", "", s.title), mk("p", "mute", s.sub));
+    const grid = mk("div", "flips"); c.card.append(grid);
+    let seen = 0;
+    s.cards.forEach((k, i) => {
+      const f = mk("div", "flip rise", `<div><div class="f"><span>${k.emoji}</span>${k.front}</div><div class="b">${k.back}</div></div>`);
+      f.style.setProperty("--d", (.2 + i * .15) + "s");
+      f.onclick = () => { if (f.classList.contains("on")) return; f.classList.add("on"); seen++; if (seen === s.cards.length) setTimeout(() => c.alive() && c.ready(s.cta), 900); };
+      grid.append(f);
+    });
+  },
+
+  final(s, c) {
+    c.card.append(mk("h2", "", s.title));
+    const box = mk("div", "opts"); c.card.append(box);
+    s.options.forEach(o => {
+      const b = mk("button", "opt", o);
+      b.onclick = () => {
+        finalVerdict = o; box.remove(); c.card.querySelector("h2").remove(); c.card.querySelector(".kicker").remove();
+        const cert = mk("div", "cert rise", `<div class="kicker">${CONFIG.her} · ${new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</div><h2>${s.certTitle}</h2><p class="mute">${s.certLine}</p><div class="who">${o}</div><p class="mute" style="margin:0;font-size:13px">${s.certFoot}</p>`);
+        c.card.append(cert); burst(cert, ["🍫", "😂", "🎉", "🏆"], 18);
+        const f = mk("div", "foot"), share = mk("button", "btn", s.share), rep = mk("button", "btn ghost", s.replay);
+        share.onclick = () => {
+          const text = s.shareText(finalVerdict);
+          if (CONFIG.phone) location.href = `sms:${CONFIG.phone}?&body=${encodeURIComponent(text)}`;
+          else if (navigator.share) navigator.share({ text }).catch(() => {});
+          else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast("Verdict copié, colle-le à Lukas 😂"));
+        };
+        rep.onclick = () => { proofs = 0; setProofs(0); go(0); };
+        f.append(share, rep); c.card.append(f);
+      };
+      box.append(b);
+    });
+  }
+};
+
+go(0);
+</script>
+</body>
+</html>
